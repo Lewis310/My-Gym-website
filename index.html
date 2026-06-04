@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Gym Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #181818;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --accent: #c8ff00;
+    --accent-dim: #8fb300;
+    --text: #f0f0f0;
+    --muted: #888;
+    --danger: #ff4d4d;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-size: 15px; min-height: 100vh; }
+  h1, h2, h3, .big { font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.02em; }
+
+  /* NAV */
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .nav-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 0.05em; color: var(--accent); }
+  .back-btn { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; padding: 4px; line-height: 1; }
+  .back-btn:hover { color: var(--text); }
+
+  /* SCREENS */
+  .screen { display: none; padding: 16px; }
+  .screen.active { display: block; }
+
+  /* PROGRAM CARDS */
+  .program-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.15s; }
+  .program-card:hover { border-color: var(--accent); }
+  .program-card.active-program { border-color: var(--accent); }
+  .program-name { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 600; }
+  .program-meta { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .chevron { color: var(--muted); font-size: 20px; }
+  .active-badge { font-size: 11px; background: var(--accent); color: #000; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+
+  /* DAY LIST */
+  .day-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.15s; }
+  .day-card:hover { border-color: var(--accent); }
+  .day-name { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; }
+  .day-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* EXERCISE */
+  .ex-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
+  .ex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .ex-name { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; }
+  .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
+  .del-btn:hover { color: var(--danger); }
+
+  /* SET ROW */
+  .sets-header { display: grid; grid-template-columns: 36px 1fr 1fr 32px; gap: 6px; margin-bottom: 4px; }
+  .sets-header span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .set-row { display: grid; grid-template-columns: 36px 1fr 1fr 32px; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .set-num { font-size: 12px; color: var(--muted); text-align: center; }
+
+  /* WEIGHT CONTROL */
+  .weight-ctrl { display: flex; align-items: center; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .w-btn { background: var(--surface2); border: none; color: var(--accent); font-size: 18px; font-weight: 700; width: 32px; height: 34px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+  .w-btn:hover { background: var(--border); }
+  .w-btn:active { background: var(--accent); color: #000; }
+  .w-val { background: var(--surface2); border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border); color: var(--text); font-size: 13px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; width: 100%; text-align: center; height: 34px; padding: 0 2px; }
+  .w-val:focus { outline: none; background: #2a2a2a; }
+
+  /* REPS INPUT */
+  .reps-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; width: 100%; text-align: center; height: 34px; padding: 0 4px; }
+  .reps-input:focus { outline: none; border-color: var(--accent); }
+
+  /* BUTTONS */
+  .btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; font-family: 'Barlow', sans-serif; padding: 8px 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .btn:hover { border-color: var(--accent); }
+  .btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .btn-accent:hover { background: #d4ff1a; border-color: #d4ff1a; }
+  .btn-sm { padding: 5px 10px; font-size: 13px; }
+  .add-set-btn { background: none; border: none; color: var(--accent-dim); font-size: 13px; cursor: pointer; padding: 4px 0; margin-top: 2px; }
+  .add-set-btn:hover { color: var(--accent); }
+
+  /* ADD ROW */
+  .add-row { display: flex; gap: 8px; margin-top: 12px; }
+  .add-input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 8px 12px; }
+  .add-input:focus { outline: none; border-color: var(--accent); }
+  .add-input::placeholder { color: var(--muted); }
+
+  /* INCREMENT SELECTOR */
+  .inc-row { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .inc-label { font-size: 12px; color: var(--muted); margin-right: 2px; }
+  .inc-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; color: var(--muted); font-size: 12px; padding: 3px 10px; cursor: pointer; }
+  .inc-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+  /* SECTION LABEL */
+  .section-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; margin-top: 18px; }
+
+  /* MODAL */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 100%; max-width: 360px; }
+  .modal h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 14px; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+
+  .empty { text-align: center; color: var(--muted); padding: 30px 0; font-size: 14px; }
+  .tag { font-size: 11px; background: var(--surface2); color: var(--muted); border-radius: 99px; padding: 2px 8px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="back-btn" id="back-btn" onclick="goBack()" style="display:none">&#8592;</button>
+  <div class="nav-title" id="nav-title">💪 GYM TRACKER</div>
+  <button class="btn btn-sm" id="nav-add-btn" onclick="openAddProgram()">+ Program</button>
+</div>
+
+<!-- SCREEN: PROGRAMS -->
+<div class="screen active" id="screen-programs">
+  <div class="section-label">Your Programs</div>
+  <div id="programs-list"></div>
+</div>
+
+<!-- SCREEN: DAYS -->
+<div class="screen" id="screen-days">
+  <div class="inc-row">
+    <span class="inc-label">Weight increment:</span>
+    <button class="inc-btn" onclick="setInc(1.25)">1.25</button>
+    <button class="inc-btn selected" onclick="setInc(2.5)">2.5</button>
+    <button class="inc-btn" onclick="setInc(5)">5</button>
+    <button class="inc-btn" onclick="setInc(10)">10</button>
+    <span class="tag" id="inc-unit-label">kg</span>
+  </div>
+  <div class="section-label">Training Days</div>
+  <div id="days-list"></div>
+  <div class="add-row" style="margin-top:10px">
+    <input class="add-input" id="new-day-input" placeholder="New day name (e.g. Push A)" />
+    <button class="btn btn-accent" onclick="addDay()">+</button>
+  </div>
+</div>
+
+<!-- SCREEN: EXERCISES -->
+<div class="screen" id="screen-exercises">
+  <div class="section-label">Exercises</div>
+  <div id="exercises-list"></div>
+  <div class="add-row">
+    <input class="add-input" id="new-ex-input" placeholder="Add exercise..." />
+    <button class="btn btn-accent" onclick="addExercise()">+</button>
+  </div>
+</div>
+
+<!-- MODAL: ADD PROGRAM -->
+<div class="modal-bg" id="modal-program">
+  <div class="modal">
+    <h3>New Program</h3>
+    <input class="add-input" id="prog-name-input" placeholder="Program name (e.g. PPL, 5/3/1)" style="width:100%;margin-bottom:10px" />
+    <input class="add-input" id="prog-desc-input" placeholder="Description (optional)" style="width:100%" />
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="saveProgram()">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = {
+  programs: [
+    {
+      id: 1, name: "PPL", desc: "Push Pull Legs — 6 day split",
+      days: [
+        { id: 1, name: "Push A", exercises: [
+          { id: 1, name: "Bench Press", sets: [{reps:"5",weight:"80"},{reps:"5",weight:"80"},{reps:"5",weight:"80"}] },
+          { id: 2, name: "Overhead Press", sets: [{reps:"8",weight:"50"},{reps:"8",weight:"50"}] },
+          { id: 3, name: "Tricep Pushdown", sets: [{reps:"12",weight:"30"},{reps:"12",weight:"30"}] }
+        ]},
+        { id: 2, name: "Pull A", exercises: [
+          { id: 1, name: "Deadlift", sets: [{reps:"5",weight:"120"},{reps:"5",weight:"120"}] },
+          { id: 2, name: "Pull Ups", sets: [{reps:"8",weight:"BW"},{reps:"7",weight:"BW"}] },
+          { id: 3, name: "Barbell Row", sets: [{reps:"8",weight:"70"},{reps:"8",weight:"70"}] }
+        ]},
+        { id: 3, name: "Legs A", exercises: [
+          { id: 1, name: "Squat", sets: [{reps:"5",weight:"100"},{reps:"5",weight:"105"},{reps:"5",weight:"105"}] },
+          { id: 2, name: "Leg Press", sets: [{reps:"10",weight:"140"},{reps:"10",weight:"140"}] },
+          { id: 3, name: "Calf Raise", sets: [{reps:"15",weight:"60"},{reps:"15",weight:"60"}] }
+        ]}
+      ]
+    },
+    {
+      id: 2, name: "Upper / Lower", desc: "4 day split",
+      days: [
+        { id: 1, name: "Upper A", exercises: [
+          { id: 1, name: "Bench Press", sets: [{reps:"5",weight:"80"},{reps:"5",weight:"80"},{reps:"5",weight:"80"}] },
+          { id: 2, name: "Barbell Row", sets: [{reps:"5",weight:"70"},{reps:"5",weight:"70"}] }
+        ]},
+        { id: 2, name: "Lower A", exercises: [
+          { id: 1, name: "Squat", sets: [{reps:"5",weight:"100"},{reps:"5",weight:"100"},{reps:"3",weight:"110"}] },
+          { id: 2, name: "Romanian Deadlift", sets: [{reps:"8",weight:"80"},{reps:"8",weight:"80"}] }
+        ]},
+        { id: 3, name: "Upper B", exercises: [
+          { id: 1, name: "Overhead Press", sets: [{reps:"5",weight:"50"},{reps:"5",weight:"50"}] },
+          { id: 2, name: "Pull Ups", sets: [{reps:"8",weight:"BW"},{reps:"7",weight:"BW"}] }
+        ]},
+        { id: 4, name: "Lower B", exercises: [
+          { id: 1, name: "Deadlift", sets: [{reps:"5",weight:"120"},{reps:"5",weight:"120"}] },
+          { id: 2, name: "Leg Press", sets: [{reps:"10",weight:"140"},{reps:"10",weight:"140"}] }
+        ]}
+      ]
+    }
+  ],
+  currentProgram: null,
+  currentDay: null,
+  increment: 2.5,
+  nextProgId: 3,
+  nextDayId: 10,
+  nextExId: 100
+};
+
+function save() { try { localStorage.setItem('gymtracker_v2', JSON.stringify(state)); } catch(e){} }
+function load() { try { const d = localStorage.getItem('gymtracker_v2'); if(d) state = JSON.parse(d); } catch(e){} }
+load();
+
+let navStack = ['programs'];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function updateNav() {
+  const cur = navStack[navStack.length - 1];
+  const backBtn = document.getElementById('back-btn');
+  const navTitle = document.getElementById('nav-title');
+  const navAddBtn = document.getElementById('nav-add-btn');
+  if (cur === 'programs') {
+    backBtn.style.display = 'none';
+    navTitle.textContent = '💪 GYM TRACKER';
+    navAddBtn.style.display = '';
+    navAddBtn.textContent = '+ Program';
+    navAddBtn.onclick = openAddProgram;
+  } else if (cur === 'days') {
+    backBtn.style.display = '';
+    const prog = state.programs.find(p => p.id === state.currentProgram);
+    navTitle.textContent = prog ? prog.name.toUpperCase() : 'PROGRAM';
+    navAddBtn.style.display = 'none';
+  } else if (cur === 'exercises') {
+    backBtn.style.display = '';
+    const prog = state.programs.find(p => p.id === state.currentProgram);
+    const day = prog && prog.days.find(d => d.id === state.currentDay);
+    navTitle.textContent = day ? day.name.toUpperCase() : 'DAY';
+    navAddBtn.style.display = 'none';
+  }
+}
+
+function goBack() {
+  navStack.pop();
+  const cur = navStack[navStack.length - 1];
+  showScreen(cur);
+  updateNav();
+  if (cur === 'programs') renderPrograms();
+  else if (cur === 'days') renderDays();
+}
+
+function setInc(val) {
+  state.increment = val;
+  document.querySelectorAll('.inc-btn').forEach(b => {
+    b.classList.toggle('selected', parseFloat(b.textContent) === val);
+  });
+  save();
+}
+
+// PROGRAMS
+function renderPrograms() {
+  const list = document.getElementById('programs-list');
+  list.innerHTML = '';
+  if (!state.programs.length) { list.innerHTML = '<div class="empty">No programs yet. Tap + Program to create one.</div>'; return; }
+  state.programs.forEach(prog => {
+    const div = document.createElement('div');
+    div.className = 'program-card';
+    div.innerHTML = `
+      <div>
+        <div class="program-name">${prog.name}</div>
+        <div class="program-meta">${prog.desc || ''} &nbsp; <span class="tag">${prog.days.length} day${prog.days.length!==1?'s':''}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="del-btn" onclick="event.stopPropagation();deleteProgram(${prog.id})" title="Delete">✕</button>
+        <span class="chevron">›</span>
+      </div>`;
+    div.onclick = () => openProgram(prog.id);
+    list.appendChild(div);
+  });
+}
+
+function openProgram(id) {
+  state.currentProgram = id;
+  navStack.push('days');
+  showScreen('days');
+  updateNav();
+  renderDays();
+}
+
+function openAddProgram() {
+  document.getElementById('prog-name-input').value = '';
+  document.getElementById('prog-desc-input').value = '';
+  document.getElementById('modal-program').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-program').classList.remove('open');
+}
+
+function saveProgram() {
+  const name = document.getElementById('prog-name-input').value.trim();
+  if (!name) return;
+  const desc = document.getElementById('prog-desc-input').value.trim();
+  state.programs.push({ id: state.nextProgId++, name, desc, days: [] });
+  save();
+  closeModal();
+  renderPrograms();
+}
+
+function deleteProgram(id) {
+  if (!confirm('Delete this program?')) return;
+  state.programs = state.programs.filter(p => p.id !== id);
+  save();
+  renderPrograms();
+}
+
+// DAYS
+function renderDays() {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  if (!prog) return;
+  const list = document.getElementById('days-list');
+  list.innerHTML = '';
+  if (!prog.days.length) { list.innerHTML = '<div class="empty">No days yet. Add one below.</div>'; }
+  prog.days.forEach(day => {
+    const div = document.createElement('div');
+    div.className = 'day-card';
+    div.innerHTML = `
+      <div>
+        <div class="day-name">${day.name}</div>
+        <div class="day-meta">${day.exercises.length} exercise${day.exercises.length!==1?'s':''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="del-btn" onclick="event.stopPropagation();deleteDay(${day.id})" title="Delete">✕</button>
+        <span class="chevron">›</span>
+      </div>`;
+    div.onclick = () => openDay(day.id);
+    list.appendChild(div);
+  });
+  // sync increment UI
+  document.querySelectorAll('.inc-btn').forEach(b => {
+    b.classList.toggle('selected', parseFloat(b.textContent) === state.increment);
+  });
+}
+
+function addDay() {
+  const inp = document.getElementById('new-day-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  prog.days.push({ id: state.nextDayId++, name, exercises: [] });
+  inp.value = '';
+  save();
+  renderDays();
+}
+
+function deleteDay(id) {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  prog.days = prog.days.filter(d => d.id !== id);
+  save();
+  renderDays();
+}
+
+// EXERCISES
+function openDay(id) {
+  state.currentDay = id;
+  navStack.push('exercises');
+  showScreen('exercises');
+  updateNav();
+  renderExercises();
+}
+
+function renderExercises() {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  const day = prog && prog.days.find(d => d.id === state.currentDay);
+  if (!day) return;
+  const list = document.getElementById('exercises-list');
+  list.innerHTML = '';
+  if (!day.exercises.length) { list.innerHTML = '<div class="empty">No exercises yet. Add one below.</div>'; }
+  day.exercises.forEach(ex => {
+    const block = document.createElement('div');
+    block.className = 'ex-block';
+    let setsHtml = '';
+    ex.sets.forEach((s, si) => {
+      const isNum = !isNaN(parseFloat(s.weight));
+      setsHtml += `
+        <div class="set-row">
+          <div class="set-num">${si+1}</div>
+          <input class="reps-input" type="text" inputmode="numeric" value="${s.reps}" placeholder="Reps" oninput="updateSet(${ex.id},${si},'reps',this.value)" />
+          <div class="weight-ctrl">
+            <button class="w-btn" onclick="adjustWeight(${ex.id},${si},-1)">−</button>
+            <input class="w-val" type="text" value="${s.weight}" oninput="updateSet(${ex.id},${si},'weight',this.value)" />
+            <button class="w-btn" onclick="adjustWeight(${ex.id},${si},1)">+</button>
+          </div>
+          <button class="del-btn" onclick="delSet(${ex.id},${si})" title="Remove set">✕</button>
+        </div>`;
+    });
+    block.innerHTML = `
+      <div class="ex-header">
+        <div class="ex-name">${ex.name}</div>
+        <button class="del-btn" onclick="delExercise(${ex.id})" title="Delete exercise">🗑</button>
+      </div>
+      <div class="sets-header">
+        <span></span><span>Reps</span><span>Weight</span><span></span>
+      </div>
+      ${setsHtml}
+      <button class="add-set-btn" onclick="addSet(${ex.id})">+ Add set</button>`;
+    list.appendChild(block);
+  });
+}
+
+function addExercise() {
+  const inp = document.getElementById('new-ex-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  const day = prog.days.find(d => d.id === state.currentDay);
+  day.exercises.push({ id: state.nextExId++, name, sets: [{reps:'',weight:'0'}] });
+  inp.value = '';
+  save();
+  renderExercises();
+}
+
+function delExercise(exId) {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  const day = prog.days.find(d => d.id === state.currentDay);
+  day.exercises = day.exercises.filter(e => e.id !== exId);
+  save();
+  renderExercises();
+}
+
+function addSet(exId) {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  const day = prog.days.find(d => d.id === state.currentDay);
+  const ex = day.exercises.find(e => e.id === exId);
+  const last = ex.sets[ex.sets.length - 1];
+  ex.sets.push({ reps: last ? last.reps : '', weight: last ? last.weight : '0' });
+  save();
+  renderExercises();
+}
+
+function delSet(exId, si) {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  const day = prog.days.find(d => d.id === state.currentDay);
+  const ex = day.exercises.find(e => e.id === exId);
+  if (ex.sets.length > 1) ex.sets.splice(si, 1);
+  save();
+  renderExercises();
+}
+
+function updateSet(exId, si, field, val) {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  const day = prog.days.find(d => d.id === state.currentDay);
+  const ex = day.exercises.find(e => e.id === exId);
+  ex.sets[si][field] = val;
+  save();
+}
+
+function adjustWeight(exId, si, dir) {
+  const prog = state.programs.find(p => p.id === state.currentProgram);
+  const day = prog.days.find(d => d.id === state.currentDay);
+  const ex = day.exercises.find(e => e.id === exId);
+  const s = ex.sets[si];
+  const cur = parseFloat(s.weight);
+  if (isNaN(cur)) return;
+  let next = Math.round((cur + dir * state.increment) * 100) / 100;
+  if (next < 0) next = 0;
+  s.weight = String(next);
+  save();
+  renderExercises();
+}
+
+// INIT
+renderPrograms();
+updateNav();
+</script>
+</body>
+</html>
